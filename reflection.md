@@ -48,13 +48,19 @@ Core user actions:
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+- **How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?**
+  I used Claude as my coding assistant for almost every step. It helped me brainstorm the four classes and their attributes and methods, turned that list into a Mermaid.js UML diagram, generated the class skeleton in `pawpal_system.py`, filled in the method logic, wrote the `main.py` demo script, and drafted my first two pytest tests. I also used it as a tutor: I asked it to explain what UML is, why I need to activate a virtual environment, and why we write tests at all.
+
+- **What kinds of prompts or questions were most helpful?**
+  Short, specific requests worked best, like "write each box from the diagram as a Python class" or "review this skeleton for missing relationships." Asking "why" questions ("why do I have to activate the venv?") was also helpful because the answers helped me understand the steps instead of just copying commands.
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+- **Describe one moment where you did not accept an AI suggestion as-is.**
+  When the AI reviewed my skeleton, it pointed out that `priority` was stored as text ("low"/"medium"/"high"), which would sort in the wrong order alphabetically. Instead of changing the attribute to a number right away, I kept it as readable text and decided to map each priority to a number only inside `sort_by_priority()`. It also suggested linking each Task to its Pet; I waited until Phase 2 to add `pet_name`, when I actually needed it to show the pet's name in the schedule.
+
+- **How did you evaluate or verify what the AI suggested?**
+  I checked the UML by pasting it into mermaid.live and making sure the arrows (Owner has Pets, Pet has Tasks, Scheduler uses Owner) matched my design. I verified the code by running `python main.py` and checking that the high-priority tasks came first and that the 45-minute bath was skipped when there wasn't enough time left. Finally, I ran `python -m pytest` and confirmed both tests passed.
 
 ---
 

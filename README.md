@@ -73,6 +73,12 @@ Included 'Play session' for Mochi: medium priority, 20 min (total so far 75 min)
 Skipped 'Bath' for Biscuit: needs 45 min but not enough time was left after higher-priority tasks.
 ```
 
+## 🧩 Implementation Summary
+
+PawPal+ is built from four classes in `pawpal_system.py`. An **Owner** has a name, the minutes they have available today, and a list of **Pets**; each Pet holds its own list of care **Tasks** (title, duration, priority, preferred time, frequency, and completion status).
+
+The **Scheduler** is the "brain": it gets every pet's tasks through `Owner.get_all_tasks()`, skips completed ones, sorts the rest by priority (then by preferred time), and adds tasks to the plan until the owner's available time runs out. Tasks that don't fit go into a skipped list, and `explain_plan()` describes why each task was included or skipped. `main.py` is a demo script that builds a sample owner with two pets and prints today's schedule.
+
 ## 🧪 Testing PawPal+
 
 ```bash
