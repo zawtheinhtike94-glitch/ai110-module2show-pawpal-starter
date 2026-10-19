@@ -10,6 +10,7 @@ classDiagram
         +add_pet(pet: Pet) None
         +remove_pet(pet: Pet) None
         +get_pets() list~Pet~
+        +get_all_tasks() list~Task~
     }
 
     class Pet {
@@ -29,6 +30,7 @@ classDiagram
         +str time
         +str frequency
         +bool completed
+        +str pet_name
         +mark_complete() None
         +edit(duration_minutes: int, priority: str) None
     }
