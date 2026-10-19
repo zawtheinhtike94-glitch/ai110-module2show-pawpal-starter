@@ -35,6 +35,8 @@ classDiagram
 
     class Scheduler {
         +Owner owner
+        +list~Task~ planned_tasks
+        +list~Task~ skipped_tasks
         +generate_plan() list~Task~
         +sort_by_priority(tasks: list~Task~) list~Task~
         +explain_plan() str

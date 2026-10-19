@@ -77,6 +77,8 @@ class Scheduler:
 
     def __init__(self, owner: Owner):
         self.owner = owner
+        self.planned_tasks: List[Task] = []  # tasks chosen for today
+        self.skipped_tasks: List[Task] = []  # tasks that didn't fit, so explain_plan can say why
 
     def generate_plan(self) -> List[Task]:
         """Pick the tasks that fit in the owner's available time today."""
