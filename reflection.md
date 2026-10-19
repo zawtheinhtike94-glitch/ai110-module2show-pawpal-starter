@@ -4,6 +4,11 @@
 
 **a. Initial design**
 
+Core user actions:
+1. A user can enter their owner info and add a pet with its name, species, and age.
+2. A user can add or edit a care task (like a walk, feeding, or medication) with how long it takes and how important it is.
+3. A user can generate today's plan, which lists the tasks in order and explains why it chose that order.
+
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
