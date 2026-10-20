@@ -39,8 +39,11 @@ Core user actions:
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+- **Describe one tradeoff your scheduler makes.**
+  My conflict detection (`Scheduler.detect_conflicts()`) only flags tasks that have the exact same start time, like two tasks both at 08:00. It does not check whether tasks overlap based on their durations. For example, a 30-minute walk at 07:30 and a feeding at 07:45 really do overlap, but my scheduler won't warn about them.
+
+- **Why is that tradeoff reasonable for this scenario?**
+  For a busy pet owner, the most common mistake is accidentally putting two things in the same time slot, and the exact-match check catches that with simple, easy-to-read code (group tasks by time, warn if a slot has more than one). Many pet tasks are also flexible; a feeding can usually happen a few minutes after a walk ends. Checking real overlaps would mean converting times to minutes and comparing every pair of tasks, which adds complexity for a small benefit right now. If users needed tighter timing, overlap checking would be the next improvement.
 
 ---
 

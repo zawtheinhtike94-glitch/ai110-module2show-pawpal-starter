@@ -3,11 +3,15 @@
 Classes and attributes match diagrams/uml.mmd.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import date, timedelta
 from typing import List, Optional
 
 # Lower number = more important, so sorting puts "high" first.
 PRIORITY_ORDER = {"high": 0, "medium": 1, "low": 2}
+
+# How far ahead the next copy of a recurring task is due.
+RECURRENCE_GAP = {"daily": timedelta(days=1), "weekly": timedelta(weeks=1)}
 
 
 @dataclass
@@ -21,10 +25,15 @@ class Task:
     frequency: str = "daily"  # "daily" or "weekly"
     completed: bool = False
     pet_name: Optional[str] = None  # set by Pet.add_task so the plan can show whose task it is
+    due_date: date = field(default_factory=date.today)
 
-    def mark_complete(self) -> None:
-        """Mark this task as done."""
+    def mark_complete(self) -> Optional["Task"]:
+        """Mark this task as done and return the next occurrence if it repeats."""
         self.completed = True
+        gap = RECURRENCE_GAP.get(self.frequency)
+        if gap is None:
+            return None
+        return replace(self, completed=False, due_date=self.due_date + gap)
 
     def edit(self, duration_minutes: int, priority: str) -> None:
         """Change how long this task takes and how important it is."""
@@ -102,7 +111,11 @@ class Scheduler:
         self.skipped_tasks = []
 
         # Read from the Owner so tasks from every pet are included.
-        pending = [task for task in self.owner.get_all_tasks() if not task.completed]
+        # Future copies of recurring tasks (due after today) are left out.
+        today = date.today()
+        pending = [
+            task for task in self.owner.get_all_tasks() if not task.completed and task.due_date <= today
+        ]
 
         minutes_left = self.owner.available_minutes
         for task in self.sort_by_priority(pending):
@@ -121,6 +134,45 @@ class Scheduler:
             tasks,
             key=lambda task: (PRIORITY_ORDER.get(task.priority, len(PRIORITY_ORDER)), task.time or "99:99"),
         )
+
+    def sort_by_time(self, tasks: List[Task]) -> List[Task]:
+        """Return tasks in clock order ("07:30" before "08:00"); tasks with no time go last."""
+        # Zero-padded "HH:MM" strings sort correctly as text, so no time parsing is needed.
+        return sorted(tasks, key=lambda task: task.time or "99:99")
+
+    def mark_task_complete(self, task: Task) -> Optional[Task]:
+        """Complete a task and, if it repeats, add its next occurrence to the same pet."""
+        next_task = task.mark_complete()
+        if next_task is not None:
+            for pet in self.owner.get_pets():
+                if pet.name == task.pet_name:
+                    pet.add_task(next_task)
+                    break
+        return next_task
+
+    def filter_tasks(self, pet_name: Optional[str] = None, completed: Optional[bool] = None) -> List[Task]:
+        """Return the owner's tasks, optionally only for one pet and/or one completion status."""
+        tasks = self.owner.get_all_tasks()
+        if pet_name is not None:
+            tasks = [task for task in tasks if task.pet_name == pet_name]
+        if completed is not None:
+            tasks = [task for task in tasks if task.completed == completed]
+        return tasks
+
+    def detect_conflicts(self) -> List[str]:
+        """Return a warning for each time slot that has more than one task (exact time match only)."""
+        today = date.today()
+        by_time = {}
+        for task in self.owner.get_all_tasks():
+            if task.time and not task.completed and task.due_date <= today:
+                by_time.setdefault(task.time, []).append(task)
+
+        warnings = []
+        for time, tasks in sorted(by_time.items()):
+            if len(tasks) > 1:
+                names = ", ".join(f"'{task.title}' ({task.pet_name})" for task in tasks)
+                warnings.append(f"Conflict at {time}: {names} are scheduled at the same time.")
+        return warnings
 
     def explain_plan(self) -> str:
         """Explain why each task was included or skipped."""

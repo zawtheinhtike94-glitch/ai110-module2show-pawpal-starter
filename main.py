@@ -38,14 +38,31 @@ def main() -> None:
     owner.add_pet(biscuit)
     owner.add_pet(mochi)
 
-    biscuit.add_task(Task("Morning walk", 30, "high", time="07:30"))
+    # Added out of time order on purpose, to show sort_by_time() working.
+    mochi.add_task(Task("Play session", 20, "medium", time="18:00"))
     biscuit.add_task(Task("Breakfast", 10, "high", time="08:00"))
     biscuit.add_task(Task("Bath", 45, "low", time="17:00", frequency="weekly"))
-    mochi.add_task(Task("Feeding", 10, "high", time="08:15"))
     mochi.add_task(Task("Medication", 5, "medium", time="09:00"))
-    mochi.add_task(Task("Play session", 20, "medium", time="18:00"))
+    biscuit.add_task(Task("Morning walk", 30, "high", time="07:30"))
+    mochi.add_task(Task("Feeding", 10, "high", time="08:00"))  # same time as Breakfast -> conflict
 
-    print_schedule(Scheduler(owner))
+    scheduler = Scheduler(owner)
+    print_schedule(scheduler)
+
+    print("\nAll tasks sorted by time:")
+    for task in scheduler.sort_by_time(owner.get_all_tasks()):
+        print(f"  {task.time or 'any':<6} {task.title} ({task.pet_name})")
+
+    print("\nOnly Mochi's tasks:")
+    for task in scheduler.filter_tasks(pet_name="Mochi"):
+        print(f"  {task.title}")
+
+    print("\nConflict check:")
+    conflicts = scheduler.detect_conflicts()
+    for warning in conflicts:
+        print(f"  WARNING: {warning}")
+    if not conflicts:
+        print("  No conflicts found.")
 
 
 if __name__ == "__main__":
