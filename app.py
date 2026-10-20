@@ -97,22 +97,69 @@ else:
         )
         st.success(f"Added '{task_title}' for {task_pet}.")
 
-all_tasks = owner.get_all_tasks()
-if all_tasks:
-    st.write("Current tasks:")
-    st.table(
-        [
-            {
-                "pet": t.pet_name,
-                "task": t.title,
-                "time": t.time or "any",
-                "minutes": t.duration_minutes,
-                "priority": t.priority,
-                "frequency": t.frequency,
-            }
-            for t in all_tasks
-        ]
+scheduler = Scheduler(owner)
+
+if owner.get_all_tasks():
+    # Conflict warnings: shown right above the task list so the owner can fix them before planning.
+    for warning in scheduler.detect_conflicts():
+        st.warning(f"⚠️ {warning} Consider moving one of them to a different time.")
+
+    st.markdown("#### Task list")
+    col1, col2 = st.columns(2)
+    with col1:
+        pet_filter = st.selectbox("Show tasks for", ["All pets"] + [p.name for p in owner.get_pets()])
+    with col2:
+        status_filter = st.radio("Status", ["All", "To do", "Done"], horizontal=True)
+
+    completed = {"All": None, "To do": False, "Done": True}[status_filter]
+    filtered = scheduler.filter_tasks(
+        pet_name=None if pet_filter == "All pets" else pet_filter, completed=completed
     )
+    shown = scheduler.sort_by_time(filtered)
+
+    if shown:
+        st.caption("Sorted by time (tasks with no time are listed last).")
+        st.table(
+            [
+                {
+                    "time": t.time or "any",
+                    "pet": t.pet_name,
+                    "task": t.title,
+                    "minutes": t.duration_minutes,
+                    "priority": t.priority,
+                    "repeats": t.frequency,
+                    "due": t.due_date.isoformat(),
+                    "status": "✅ done" if t.completed else "to do",
+                }
+                for t in shown
+            ]
+        )
+    else:
+        st.info("No tasks match this filter.")
+
+    # Completing a task through the Scheduler also creates the next copy of a daily/weekly task.
+    open_tasks = scheduler.sort_by_time(scheduler.filter_tasks(completed=False))
+    if open_tasks:
+        labels = [f"{t.time or 'any'} · {t.title} ({t.pet_name}) · due {t.due_date.isoformat()}" for t in open_tasks]
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            choice = st.selectbox("Mark a task as done", range(len(open_tasks)), format_func=lambda i: labels[i])
+        with col2:
+            st.write("")
+            st.write("")
+            if st.button("Mark done"):
+                task = open_tasks[choice]
+                next_task = scheduler.mark_task_complete(task)
+                if next_task is not None:
+                    st.session_state.flash = (
+                        f"Marked '{task.title}' done. Next {task.frequency} copy is due {next_task.due_date.isoformat()}."
+                    )
+                else:
+                    st.session_state.flash = f"Marked '{task.title}' done."
+                st.rerun()
+
+    if "flash" in st.session_state:
+        st.success(st.session_state.pop("flash"))
 elif owner.get_pets():
     st.info("No tasks yet. Add one above.")
 
@@ -122,7 +169,6 @@ st.subheader("Build Schedule")
 st.caption("Uses the Scheduler to fit the highest-priority tasks into your available time.")
 
 if st.button("Generate schedule"):
-    scheduler = Scheduler(owner)
     plan = scheduler.generate_plan()
 
     if not plan and not scheduler.skipped_tasks:
@@ -140,9 +186,12 @@ if st.button("Generate schedule"):
                         "minutes": t.duration_minutes,
                         "priority": t.priority,
                     }
-                    for t in plan
+                    for t in scheduler.sort_by_time(plan)
                 ]
             )
+            st.caption("Tasks are chosen by priority, then shown in time order.")
+        for warning in scheduler.detect_conflicts():
+            st.warning(f"⚠️ {warning}")
         if scheduler.skipped_tasks:
             st.warning(
                 "Skipped (not enough time): "
