@@ -81,19 +81,33 @@ The **Scheduler** is the "brain": it gets every pet's tasks through `Owner.get_a
 
 ## 🧪 Testing PawPal+
 
-```bash
-# Run the full test suite:
-pytest
+Run the full test suite from the project folder (with `.venv` activated):
 
-# Run with coverage:
-pytest --cov
+```bash
+python -m pytest
 ```
+
+The tests in `tests/test_pawpal.py` cover:
+
+- **Basics:** `mark_complete()` marks a task done, and adding a task increases a pet's task count.
+- **Sorting:** `sort_by_time()` returns tasks in chronological order, with untimed tasks last.
+- **Recurring tasks:** completing a daily task creates a new copy due tomorrow; a weekly task's copy is due in 7 days.
+- **Conflict detection:** two tasks at the same time (even for different pets) produce a warning; different times produce none.
+- **Scheduling edge cases:** pets with no tasks give an empty plan, and when time runs out, high-priority tasks are kept and lower-priority ones are skipped.
 
 Sample test output:
 
 ```
-# Paste your pytest output here
+============================= test session starts ==============================
+platform darwin -- Python 3.13.15, pytest-9.1.1, pluggy-1.7.0
+collected 9 items
+
+tests/test_pawpal.py .........                                           [100%]
+
+============================== 9 passed in 0.01s ===============================
 ```
+
+**Confidence level: ⭐⭐⭐⭐ (4/5).** All 9 tests pass and cover the main scheduling behaviors and several edge cases. It isn't 5 stars because some things aren't tested yet: overlapping task durations (only exact time matches are flagged as conflicts), invalid time formats like "8am", and the Streamlit UI itself.
 
 ## 📐 Smarter Scheduling
 
