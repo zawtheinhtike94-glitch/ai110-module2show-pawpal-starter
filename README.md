@@ -42,9 +42,20 @@ pip install -r requirements.txt
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
 
+## ✨ Features
+
+- **Owner & multiple pets:** enter the owner's name and minutes available today, then add any number of pets (name, species, age).
+- **Care tasks:** give each pet tasks with a title, duration, priority (low/medium/high), optional preferred time, and frequency (daily/weekly).
+- **Priority-based daily plan:** `Scheduler.generate_plan()` collects tasks from every pet, plans high-priority tasks first, and skips tasks that don't fit in the available time.
+- **Plan explanation:** `Scheduler.explain_plan()` says why each task was included or skipped.
+- **Sorting by time:** `Scheduler.sort_by_time()` lists tasks in clock order, with untimed tasks last.
+- **Filtering:** `Scheduler.filter_tasks()` shows tasks for one pet and/or only to-do or done tasks.
+- **Conflict warnings:** `Scheduler.detect_conflicts()` warns when two tasks (for any pets) are at the same time, without crashing.
+- **Daily & weekly recurrence:** marking a repeating task done (`Scheduler.mark_task_complete()`) automatically creates the next copy, due tomorrow or in 7 days.
+
 ## 🖥️ Sample Output
 
-Output of `python main.py` (one owner with 90 minutes, two pets, six tasks):
+Output of `python main.py` (one owner with 90 minutes, two pets, six tasks, including two at 08:00):
 
 ```
 ========================================================
@@ -54,7 +65,7 @@ Output of `python main.py` (one owner with 90 minutes, two pets, six tasks):
   ----------------------------------------------------
   07:30  Morning walk      Biscuit     30  high
   08:00  Breakfast         Biscuit     10  high
-  08:15  Feeding           Mochi       10  high
+  08:00  Feeding           Mochi       10  high
   09:00  Medication        Mochi        5  medium
   18:00  Play session      Mochi       20  medium
   ----------------------------------------------------
@@ -71,6 +82,22 @@ Included 'Feeding' for Mochi: high priority, 10 min (total so far 50 min).
 Included 'Medication' for Mochi: medium priority, 5 min (total so far 55 min).
 Included 'Play session' for Mochi: medium priority, 20 min (total so far 75 min).
 Skipped 'Bath' for Biscuit: needs 45 min but not enough time was left after higher-priority tasks.
+
+All tasks sorted by time:
+  07:30  Morning walk (Biscuit)
+  08:00  Breakfast (Biscuit)
+  08:00  Feeding (Mochi)
+  09:00  Medication (Mochi)
+  17:00  Bath (Biscuit)
+  18:00  Play session (Mochi)
+
+Only Mochi's tasks:
+  Play session
+  Medication
+  Feeding
+
+Conflict check:
+  WARNING: Conflict at 08:00: 'Breakfast' (Biscuit), 'Feeding' (Mochi) are scheduled at the same time.
 ```
 
 ## 🧩 Implementation Summary
@@ -120,12 +147,57 @@ tests/test_pawpal.py .........                                           [100%]
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+Run the app with `streamlit run app.py`, then:
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+1. **Set up the owner.** Enter the owner's name (e.g., Jordan) and how many minutes they have today (e.g., 60).
+2. **Add pets.** Type a pet name, choose a species, set the age, and click **Add pet**. Add a second pet the same way; both appear in the Pets table.
+3. **Add tasks.** Choose which pet the task is for, then fill in the title, preferred time (HH:MM), duration, priority, and frequency, and click **Add task**. For example: "Morning walk" for Biscuit at 07:30, 30 min, high, daily.
+4. **See conflict warnings.** If two tasks share the same time (e.g., Biscuit's Breakfast and Mochi's Feeding both at 08:00), a yellow ⚠️ warning appears above the task list suggesting you move one.
+5. **Browse the task list.** Tasks are shown sorted by time. Use **Show tasks for** to see one pet's tasks and **Status** to show only To do or Done tasks.
+6. **Mark a task done.** Pick a task under **Mark a task as done** and click **Mark done**. For a daily task, a new copy due tomorrow is added automatically (weekly tasks: due in 7 days).
+7. **Generate the schedule.** Click **Generate schedule**. The app shows how many minutes were used, a table of planned tasks in time order, a warning listing any skipped tasks, and a **Why this plan?** section explaining each choice.
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+**CLI demo.** The same logic runs in the terminal with `python main.py`, which builds Jordan with two pets and six tasks (added out of order, with two at 08:00):
+
+```
+========================================================
+  Today's Schedule for Jordan (90 min available)
+========================================================
+  Time   Task              Pet        Min  Priority
+  ----------------------------------------------------
+  07:30  Morning walk      Biscuit     30  high
+  08:00  Breakfast         Biscuit     10  high
+  08:00  Feeding           Mochi       10  high
+  09:00  Medication        Mochi        5  medium
+  18:00  Play session      Mochi       20  medium
+  ----------------------------------------------------
+  Total: 75 of 90 min
+
+  Skipped (not enough time):
+    - Bath for Biscuit (45 min, low)
+
+Why this plan:
+Jordan has 90 minutes today.
+Included 'Morning walk' for Biscuit: high priority, 30 min (total so far 30 min).
+Included 'Breakfast' for Biscuit: high priority, 10 min (total so far 40 min).
+Included 'Feeding' for Mochi: high priority, 10 min (total so far 50 min).
+Included 'Medication' for Mochi: medium priority, 5 min (total so far 55 min).
+Included 'Play session' for Mochi: medium priority, 20 min (total so far 75 min).
+Skipped 'Bath' for Biscuit: needs 45 min but not enough time was left after higher-priority tasks.
+
+All tasks sorted by time:
+  07:30  Morning walk (Biscuit)
+  08:00  Breakfast (Biscuit)
+  08:00  Feeding (Mochi)
+  09:00  Medication (Mochi)
+  17:00  Bath (Biscuit)
+  18:00  Play session (Mochi)
+
+Only Mochi's tasks:
+  Play session
+  Medication
+  Feeding
+
+Conflict check:
+  WARNING: Conflict at 08:00: 'Breakfast' (Biscuit), 'Feeding' (Mochi) are scheduled at the same time.
+```

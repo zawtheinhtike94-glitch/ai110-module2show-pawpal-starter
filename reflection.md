@@ -34,8 +34,11 @@ Core user actions:
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+- **What constraints does your scheduler consider (for example: time, priority, preferences)?**
+  The scheduler considers four things: (1) **available time**, meaning the owner's minutes for today, which is a hard limit; (2) **priority**, so high tasks are planned before medium and low ones; (3) **preferred time**, which breaks ties between tasks with the same priority and is used to sort the final plan and detect conflicts; and (4) **status and due date**, so completed tasks and future copies of recurring tasks are left out of today's plan.
+
+- **How did you decide which constraints mattered most?**
+  I ranked them by what would hurt the pet most if it went wrong. Time comes first because a plan the owner can't actually finish isn't useful. Priority comes next because things like feeding and medication matter more than a bath or extra play, so when time runs out, the low-priority tasks should be the ones skipped. Preferred time comes last because most pet tasks are flexible by a few minutes. I store owner `preferences` but don't use them in the scheduling logic yet, to keep the first version simple.
 
 **b. Tradeoffs**
 
@@ -71,13 +74,19 @@ Core user actions:
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+- **What behaviors did you test?**
+  My 9 pytest tests in `tests/test_pawpal.py` cover: marking a task complete; adding a task to a pet; sorting tasks into chronological order (with untimed tasks last); a daily task creating a new copy due tomorrow and a weekly task creating one due in 7 days; conflict detection flagging two tasks at 08:00 for different pets; no false warning when times differ; an empty plan when pets have no tasks; and the plan keeping high-priority tasks and skipping a low-priority one when time runs out.
+
+- **Why were these tests important?**
+  These are the behaviors a pet owner actually relies on. If sorting or recurrence broke, a feeding or medication could be missed or show up on the wrong day. The edge-case tests (no tasks, not enough time, no conflicts) check that the app doesn't crash or give misleading warnings in situations that are easy to hit in real use. Having them also let me change `pawpal_system.py` in later phases and quickly confirm I didn't break earlier features.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+- **How confident are you that your scheduler works correctly?**
+  About 4 out of 5. All 9 tests pass, `main.py` produces the expected schedule, and I tried the main flows by hand in the Streamlit app (adding pets and tasks, seeing a conflict warning, marking a task done, generating a plan).
+
+- **What edge cases would you test next if you had more time?**
+  Overlapping durations (a 30-minute walk at 07:30 and a feeding at 07:45), invalid time input like "8am" or "25:00", a task longer than all the available time, two pets with the same name, marking the same task done twice, and automated tests for the Streamlit UI itself.
 
 ---
 
@@ -85,12 +94,29 @@ Core user actions:
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+- **What part of this project are you most satisfied with?**
+  I'm most satisfied that the whole system fits together: the same `Scheduler` methods power both the terminal demo and the web app, and the app now shows sorting, filtering, conflict warnings, and recurring tasks instead of just a static form. The "Why this plan?" explanation is also a part I like, because it makes the scheduler's choices easy to understand.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+- **If you had another iteration, what would you improve or redesign?**
+  I would check for overlapping durations instead of only exact time matches, validate the time input so "8am" can't be entered, and actually use the owner's preferences (for example, putting walks in the morning). I'd also save the data to a file so pets and tasks aren't lost when the app restarts, since right now they only live in `st.session_state`.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+- **What is one important thing you learned about designing systems or working with AI on this project?**
+  Designing first made everything after it easier. Because the UML and class skeleton were clear, each later feature had an obvious place to go (for example, all the smart logic belongs in `Scheduler`). I also learned that AI can write a lot of code quickly, but I still have to be the one who checks it: running `main.py`, running pytest, and trying the app myself is how I knew the code actually worked.
+
+**d. AI strategy and being the lead architect**
+
+- **Which AI coding assistant features were most effective for building your scheduler?**
+  Having the assistant edit files directly and then run the code to check it was the most effective. For example, after it added `detect_conflicts()`, it ran `main.py` and pytest right away so I could see the 08:00 warning and "9 passed". It was also useful that it could read the course instructions and my files together, so its suggestions matched the project requirements (like making the Scheduler use `Owner.get_all_tasks()`).
+
+- **Give one example of an AI suggestion you rejected or modified to keep your system design clean.**
+  The AI pointed out that storing `priority` as text would sort in the wrong order. Instead of turning priority into numbers everywhere, I kept the readable "low/medium/high" values and only mapped them to numbers inside `sort_by_priority()`, so the rest of the code and the UI stayed simple.
+
+- **How did using separate chat sessions for different phases help you stay organized?**
+  I actually did most of the project in one long chat session instead of separate ones. What kept me organized was working one phase and one step at a time and committing to GitHub after each step, so my commit history matches the phases. In hindsight, separate sessions per phase would have kept each conversation shorter and more focused, and I'd try that next time.
+
+- **What did you learn about being the "lead architect" when collaborating with powerful AI tools?**
+  The AI is fast at writing code, but it doesn't know what matters for my users unless I decide that. My job was to set the design, choose the tradeoffs (like exact-time conflict checks), and verify the results. One example: after an update, the app crashed with "Scheduler has no attribute detect_conflicts". The code was correct, but the running Streamlit server was still using the old file. Understanding that and restarting the app was something I had to figure out and check myself.

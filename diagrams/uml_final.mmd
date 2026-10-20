@@ -1,0 +1,58 @@
+classDiagram
+    %% PawPal+ final design: matches pawpal_system.py after Phases 2-4.
+    %% New since the Phase 1 draft (uml.mmd): get_all_tasks, pet_name, due_date,
+    %% sort_by_time, filter_tasks, mark_task_complete, detect_conflicts.
+
+    class Owner {
+        +str name
+        +int available_minutes
+        +list~str~ preferences
+        +list~Pet~ pets
+        +add_pet(pet: Pet) None
+        +remove_pet(pet: Pet) None
+        +get_pets() list~Pet~
+        +get_all_tasks() list~Task~
+    }
+
+    class Pet {
+        <<dataclass>>
+        +str name
+        +str species
+        +int age
+        +list~Task~ tasks
+        +add_task(task: Task) None
+        +remove_task(task: Task) None
+        +get_tasks() list~Task~
+    }
+
+    class Task {
+        <<dataclass>>
+        +str title
+        +int duration_minutes
+        +str priority
+        +str time
+        +str frequency
+        +bool completed
+        +str pet_name
+        +date due_date
+        +mark_complete() Task
+        +edit(duration_minutes: int, priority: str) None
+    }
+
+    class Scheduler {
+        +Owner owner
+        +list~Task~ planned_tasks
+        +list~Task~ skipped_tasks
+        +generate_plan() list~Task~
+        +sort_by_priority(tasks: list~Task~) list~Task~
+        +sort_by_time(tasks: list~Task~) list~Task~
+        +filter_tasks(pet_name: str, completed: bool) list~Task~
+        +mark_task_complete(task: Task) Task
+        +detect_conflicts() list~str~
+        +explain_plan() str
+    }
+
+    Owner "1" --> "0..*" Pet : has
+    Pet "1" --> "0..*" Task : has
+    Scheduler --> Owner : reads tasks via get_all_tasks()
+    Task ..> Task : mark_complete() creates next daily/weekly copy
